@@ -51,3 +51,10 @@ Extra: Make it a cron job!
 Using python: https://stackabuse.com/scheduling-jobs-with-python-crontab/
 
 On OSX Catalina.... coming soon to the wiki
+
+
+Plots:
+
+Basic example in wiki
+
+GUI coming soon 
