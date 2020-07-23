@@ -168,7 +168,7 @@ if __name__ == "__main__":
     if os.path.isfile(xls_file)==False: #write initial file
         writer= pd.ExcelWriter(xls_file, engine = 'xlsxwriter')# as writer:
         tstats.to_excel(writer, sheet_name='Totals')
-        for i,t in enumerate(titles):
+        for i,t in enumerate(set(titles)): #set() ensures duplicates ie crossovers don't get written twice
             bms,ncs=get_story_stats_ext('\n'+t+'\n',works1)
             work_df=single_work_df(tstamp,astats[i],bms,ncs)
             work_df.to_excel(writer,sheet_name=t)
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     else:
 
         write_to_sheet('Totals',tstats,xls_file)
-        for i,t in enumerate(titles):
+        for i,t in enumerate(set(titles)): #set() ensures duplicates ie crossovers don't get written twice
             bms,ncs=get_story_stats_ext('\n'+t+'\n',works1)
             work_df=single_work_df(tstamp,astats[i],bms,ncs)
             t=fix_title(t)
