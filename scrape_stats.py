@@ -135,13 +135,19 @@ def meta_to_df(meta):
     status=pd.Series(rtags[-2])
     #<li class="relationships">
     reltags=meta.find_all('li',attrs={'class':'relationships'})
-    reltext=pd.Series([r.text for r in reltags])
+    if len(reltags) !=0:
+        reltext=pd.Series([r.text for r in reltags])
+    else:
+        reltext=pd.Series(None)
     #<li class="characters">
     charac=meta.find_all('li',attrs={'class':'characters'})
     chartext=pd.Series([r.text for r in charac])
     #<li class="freeforms">
     freef=meta.find_all('li',attrs={'class':'freeforms'})
-    freetext=pd.Series([r.text for r in freef])
+    if len(freef) !=0:
+        freetext=pd.Series([r.text for r in freef])
+    else:
+        freetext=pd.Series(None)
     #<dd class="language">
     lang=pd.Series(meta.find('dd',attrs={'class':'language'}).text)
 
