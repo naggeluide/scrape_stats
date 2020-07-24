@@ -221,8 +221,7 @@ if __name__ == "__main__":
             t=fix_title(t)
             #write_to_sheet(t,work_df,xls_file)
             #did meta change? if so, write new meta. if not, ignore
-            current_df=pd.read_excel(xls_file, t)
-            current_meta_df=[] #get the meta only
+            current_meta_df=pd.read_excel(xls_file, t,usecols=range(10,19)) #get the meta only
             if not meta_df.equals(current_meta_df):
                 write_to_sheet(t,meta_df,xls_file,meta=True) #this just overwrites cuz I'm lazy
 
