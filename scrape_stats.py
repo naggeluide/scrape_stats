@@ -214,15 +214,19 @@ if __name__ == "__main__":
 
         write_to_sheet('Totals',tstats,xls_file)
         #need to stop crossovers from getting written twice...set() should do it
-        for i,t in enumerate(set(titles)):
-            bms,ncs,meta=get_story_stats_ext('\n'+t+'\n',works1)
-            meta_df=meta_to_df(meta)
-            work_df=single_work_df(tstamp,astats[i],bms,ncs)
-            t=fix_title(t)
-            #write_to_sheet(t,work_df,xls_file)
-            #did meta change? if so, write new meta. if not, ignore
-            current_meta_df=pd.read_excel(xls_file, t,usecols=range(10,19)) #get the meta only
-            if not meta_df.equals(current_meta_df):
-                write_to_sheet(t,meta_df,xls_file,meta=True) #this just overwrites cuz I'm lazy
-
-
+        #j/k that messes up because of all_stats...
+        seen=[]
+        for i,t in enumerate(titles):
+            if t in seen:
+                continue
+            else:
+                seen.append(t)
+                bms,ncs,meta=get_story_stats_ext('\n'+t+'\n',works1)
+                meta_df=meta_to_df(meta)
+                work_df=single_work_df(tstamp,astats[i],bms,ncs)
+                t=fix_title(t)
+                write_to_sheet(t,work_df,xls_file)
+                #did meta change? if so, write new meta. if not, ignore
+                current_meta_df=pd.read_excel(xls_file, t,usecols=range(10,19))
+                if not meta_df.equals(current_meta_df):
+                    write_to_sheet(t,meta_df,xls_file,meta=True) #this just overwrites cuz I'm lazy
