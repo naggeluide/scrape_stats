@@ -106,7 +106,7 @@ def get_story_stats_ext(title,works):
             if bb.find('Collections') != -1:
                 ncs=int(bb[bb.find('Collections')+13:bb.find('Comments')-1])
             break
-    return bms,ncs
+    return bms,ncs,w
 
 def single_work_df(tstamp,astats,bms,ncs):
     '''combine everything into a single row dataframe'''
@@ -122,6 +122,35 @@ def single_work_df(tstamp,astats,bms,ncs):
     work_df=pd.DataFrame(sdict,index=[tstamp])
     return work_df
 
+def meta_to_df(meta):
+    '''put metadata -- fandom, tags, etc -- into df for writing'''
+    #<h5 class="fandoms heading">
+    fandom_head=meta.find('h5',attrs={'class':'fandoms heading'})
+    fandom=pd.Series(fandom_head.find('a').text)
+    #<ul class="required-tags">
+    rtags=meta.find('ul',attrs={'class':'required-tags'}).text.split('\n')
+    rating=pd.Series(rtags[1])
+    warnings=pd.Series(rtags[2:-3])
+    cat=pd.Series(rtags[-3])
+    status=pd.Series(rtags[-2])
+    #<li class="relationships">
+    reltags=meta.find_all('li',attrs={'class':'relationships'})
+    reltext=pd.Series([r.text for r in reltags])
+    #<li class="characters">
+    charac=meta.find_all('li',attrs={'class':'characters'})
+    chartext=pd.Series([r.text for r in charac])
+    #<li class="freeforms">
+    freef=meta.find_all('li',attrs={'class':'freeforms'})
+    freetext=pd.Series([r.text for r in freef])
+    #<dd class="language">
+    lang=pd.Series(meta.find('dd',attrs={'class':'language'}).text)
+
+    #now put in a dataframe
+    mdict={'Fandom':fandom,'Rating':rating,'Warnings':warnings,'Category':cat,'Status':status,'Relationships':reltext,'Characters':chartext,'Additional Tags':freetext,'Language':lang}
+    meta_df=pd.DataFrame(mdict)
+    return meta_df
+
+
 def fix_title(t):
     fchars=[':','/','\\','?','*','[',']'] #or any other character forbidden to Excel... : \ / ? * [ ]
     for f in fchars:
@@ -131,13 +160,7 @@ def fix_title(t):
         t=t[:31]
     return t
 
-def read_sheet(t,xls_file): #append...
-    xls = pd.ExcelFile(xls_file)
-    t=fix_title(t)
-    existing_df=pd.read_excel(xls, t)
-    return existing_df
-
-def write_to_sheet(t,df,xls_file): #append...check that this works
+def write_to_sheet(t,df,xls_file,meta=False): #append...check that this works
     #https://stackoverflow.com/questions/20219254/how-to-write-to-an-existing-excel-file-without-overwriting-data-using-pandas
     book=load_workbook(xls_file)
     writer= pd.ExcelWriter(xls_file, engine = 'openpyxl')# as writer:
@@ -147,11 +170,15 @@ def write_to_sheet(t,df,xls_file): #append...check that this works
     if t not in writer.sheets.keys(): #create page
         book.create_sheet(t)
         df.to_excel(writer,sheet_name=t)
-    else:
-        startrow = writer.book[t].max_row
-        df.to_excel(writer,sheet_name=t,startrow=startrow,header=False) #does this work if sheet doesn't exist yet? nope
+    elif not meta:
+        startrow = len(writer.book[t].columns[0])#writer.book[t].max_row
+        df.to_excel(writer,sheet_name=t,startrow=startrow,header=False)
+    if meta: #add meta columns...
+        startcol=10 #K
+        df.to_excel(writer,sheet_name=t,startcol=startcol,header=True)
     writer.save()
     writer.close()
+
 
 
 if __name__ == "__main__":
@@ -168,20 +195,29 @@ if __name__ == "__main__":
     if os.path.isfile(xls_file)==False: #write initial file
         writer= pd.ExcelWriter(xls_file, engine = 'xlsxwriter')# as writer:
         tstats.to_excel(writer, sheet_name='Totals')
-        for i,t in enumerate(set(titles)): #set() ensures duplicates ie crossovers don't get written twice
-            bms,ncs=get_story_stats_ext('\n'+t+'\n',works1)
+        for i,t in enumerate(set(titles)):
+            bms,ncs,meta=get_story_stats_ext('\n'+t+'\n',works1)
+            meta_df=meta_to_df(meta)
             work_df=single_work_df(tstamp,astats[i],bms,ncs)
             work_df.to_excel(writer,sheet_name=t)
-        writer.save()
+            meta_df.to_excel(writer,sheet_name=t,meta=True)
+        #writer.save()
         writer.close()
 
     else:
 
         write_to_sheet('Totals',tstats,xls_file)
-        for i,t in enumerate(set(titles)): #set() ensures duplicates ie crossovers don't get written twice
-            bms,ncs=get_story_stats_ext('\n'+t+'\n',works1)
+        #need to stop crossovers from getting written twice...set() should do it
+        for i,t in enumerate(set(titles)):
+            bms,ncs,meta=get_story_stats_ext('\n'+t+'\n',works1)
+            meta_df=meta_to_df(meta)
             work_df=single_work_df(tstamp,astats[i],bms,ncs)
             t=fix_title(t)
-            write_to_sheet(t,work_df,xls_file)
+            #write_to_sheet(t,work_df,xls_file)
+            #did meta change? if so, write new meta. if not, ignore
+            current_df=pd.read_excel(xls_file, t)
+            current_meta_df=[] #get the meta only
+            if not meta_df.equals(current_meta_df):
+                write_to_sheet(t,meta_df,xls_file,meta=True) #this just overwrites cuz I'm lazy
 
 
