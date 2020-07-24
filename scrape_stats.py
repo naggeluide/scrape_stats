@@ -177,7 +177,10 @@ def write_to_sheet(t,df,xls_file,meta=False): #append...check that this works
         book.create_sheet(t)
         df.to_excel(writer,sheet_name=t)
     elif not meta:
-        startrow = len(writer.book[t].columns[0])#writer.book[t].max_row
+        try: #true for works
+            startrow= df['Hits'].count()+3 #one for the header, one for starts on 1. this discounts the NaNs that may occur if meta columns are longer than stats columns
+        except KeyError: #Totals page
+            startrow = len(writer.book[t].columns[0])#writer.book[t].max_row
         df.to_excel(writer,sheet_name=t,startrow=startrow,header=False)
     if meta: #add meta columns...
         startcol=10 #K
