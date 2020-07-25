@@ -1,14 +1,24 @@
 Dependencies: Python 2.7+
 
 Packages:
+
 requests
+
 bs4 
+
 pandas
+
 time
+
 datetime
+
 openpyxl 
+
 numpy 
+
 os
+
+wordcloud
 
 Usage: 
 
